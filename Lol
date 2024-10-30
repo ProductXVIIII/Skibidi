@@ -1,0 +1,58 @@
+local function main()
+    -- Variables básicas
+    local Players = game:GetService("Players")
+    local initialBugGain = 95 -- incremento inicial de bugs
+    local increment = 95 -- incremento adicional por cada acumulación
+    local hitsPerSecond = 120 -- cantidad de golpes por segundo
+    local hitInterval = 1 / hitsPerSecond -- intervalo de tiempo entre golpes
+    local maxBugs = 1000000 -- máximo valor para evitar problemas de rendimiento con valores extremadamente altos
+
+    -- Función para iniciar la acumulación de bugs para una mascota
+    local function startPetTraining(player)
+        local pet = player:FindFirstChild("Pet") -- Suponiendo que cada jugador tiene un objeto Pet
+        if not pet then
+            print(player.Name .. " no tiene una mascota.")
+            return
+        end
+
+        local bugValue = pet:FindFirstChild("BugValue")
+        if not bugValue then
+            bugValue = Instance.new("IntValue")
+            bugValue.Name = "BugValue"
+            bugValue.Parent = pet
+        end
+
+        local bugGain = initialBugGain
+        local running = true
+
+        -- Función para manejar los golpes
+        local function handleHit()
+            while running do
+                wait(hitInterval) -- Espera el intervalo de tiempo definido entre golpes
+                bugValue.Value = bugValue.Value + bugGain
+                print(player.Name .. " ha ganado " .. bugGain .. " bugs para su mascota. Total: " .. bugValue.Value)
+
+                -- Asegúrate de que el valor no se vuelva demasiado alto
+                if bugValue.Value > maxBugs then
+                    bugValue.Value = maxBugs
+                end
+
+                bugGain = bugGain + increment -- Aumenta la cantidad de bugs ganados para el siguiente intervalo
+            end
+        end
+
+        -- Ejecuta la función de manejo de golpes en una nueva coroutine para evitar bloquear el hilo principal
+        coroutine.wrap(handleHit)()
+    end
+
+    -- Conectar la función al evento PlayerAdded
+    Players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(function(character)
+            -- Iniciar el entrenamiento de la mascota cuando el jugador se una
+            startPetTraining(player)
+        end)
+    end)
+end
+
+-- Ejecutar la función principal
+main()
